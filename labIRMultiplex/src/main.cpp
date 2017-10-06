@@ -3,6 +3,7 @@
 const int SENSOR_PIN = A0;
 const int led_pins[] = {5,6,7};
 const int num_led_pins = 3;
+const int read_delay = 5;
 
 int sensor_values[num_led_pins] = {};
 
@@ -22,6 +23,7 @@ void loop()
 {
   for(int i=0; i < num_led_pins; i++){
     digitalWrite(led_pins[i], HIGH);
+    delay(read_delay);
     sensor_values[i] = analogRead(SENSOR_PIN);
     digitalWrite(led_pins[i], LOW);
   }
