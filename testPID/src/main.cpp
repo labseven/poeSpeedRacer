@@ -13,7 +13,7 @@ const int turnLength = 20; //iterations after releasing button to keep turning
 int turnCounter = 0; //How long, in iterations, left in this turn
 
 const int numLeds = 3;
-const int ledPins[] = {3, 4, 5};
+const int ledPins[] = {5, 6, 7};
 const int sensorPin = A0;
 const int motorPins[] = {1, 2}; //Not on the Arduino, on the shield!
 const int buttonPin = A2; //Start button
