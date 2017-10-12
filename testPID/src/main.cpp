@@ -54,7 +54,7 @@ void loop() {
 
   if (myReceiver.getResults()) { //First, read from the remote, since that can change lots of behavior
     myDecoder.decode();           //Decode it
-    //myDecoder.dumpResults(true);  //Now print results -- or don't if we want speed
+    myDecoder.dumpResults(true);  //Now print results -- or don't if we want speed
     myReceiver.enableIRIn();      //Restart receiver
     turnCounter = turnLength;
   } else if (turnCounter > 0) turnCounter--;
