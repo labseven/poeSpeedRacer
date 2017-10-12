@@ -18,7 +18,10 @@ const int sensorPin = A0;
 const int motorPins[] = {1, 2}; //Not on the Arduino, on the shield!
 const int buttonPin = A2; //Start button
 
-IRrecvPCI myReceiver(2); //IR remote receiver on digital pin 2
+const int remotePin = 2; //The IR remote receiver pin
+const int spareGround = 3; //Ground pin for great good
+
+IRrecvPCI myReceiver(remotePin); //IR remote receiver
 IRdecode myDecoder; //IR remote decoder
 
 int sensorValues[3];
@@ -39,6 +42,9 @@ void setup() {
 
   AFMS.begin(); //Initialize the motor shield
   myReceiver.enableIRIn(); //Initialize the remote receiver
+
+  pinMode(remotePin, INPUT_PULLUP); //Hopefully this won't mess with the IR library
+  pinMode(spareGround, OUTPUT); digitalWrite(spareGround, LOW); //Spare ground pin for IR receiver
 
   //while (digitalRead(buttonPin) == HIGH) delay(10); //Wait for button press
 
