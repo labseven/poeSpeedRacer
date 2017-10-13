@@ -44,8 +44,32 @@ void setup() {
 
 }
 
-void loop() {
+void serial_tune_pid() {
+  int c_index = 0;
+  int parameter_i = 0;
+  char in_string[7];
+  int pid_values[3];
 
+  while(Serial.available()) {
+    char c = Serial.read();
+    if(c==" "){
+      pid_values[parameter_i] = atoi(in_string);
+      in_string = "";
+      parameter_i++;
+    }
+    in_string[c_index++] = c;
+  }
+
+  for(int i = 0; i<3; i++){
+    Serial.print(pid_values[i]);
+  }
+
+  Serial.println();
+}
+
+void loop() {
+  serial_tune_pid();
+  
   if (myReceiver.getResults()) { //First, read from the remote, since that can change lots of behavior
     myDecoder.decode();           //Decode it
     //myDecoder.dumpResults(true);  //Now print results -- or don't if we want speed
