@@ -5,16 +5,15 @@
 #include "IRLibAll.h"
 
 const int readDelay = 10;
-const float sensorDiffToLinePos = 0.1;
-float kp = 30, ki = 0.01, kd = 50;
-//Working but slow: 30, 0.01, 50
+float kp = 0.6, ki = 0.0004, kd = 1.5;
+//Working but slow: 30, 0.01, 50, speed 40, cal 60 1.4
 
-const int fast_speed = 60;
-const int slow_speed = 40;
+const int fast_speed = 40;
+const int slow_speed = fast_speed; //Spurious triggers -> keep them the same
 int cur_speed = slow_speed;
 bool fast = false;
 
-const int sensor_calibration_offset = -60;
+const int sensor_calibration_offset = 60;
 const float sensor_calibration_scale = 1.4;
 const int turnSpeedLeft = 255, turnSpeedRight = 0;
 
@@ -27,7 +26,7 @@ int integral_i = 0;
 int integral_sum = 0;
 
 const int numLeds = 2;
-const int ledPins[] = {5, 7};
+const int ledPins[] = {7, 5};
 const int sensorPin = A0;
 const int analogPower = A1;
 const int motorPins[] = {1, 2}; //Not on the Arduino, on the shield!
@@ -173,7 +172,7 @@ void loop() {
 
 
     correction = (kp * linePos) + (ki * integral_sum) + (kd * (linePos-lastPos));
-    Serial.print("\t" + String(correction));
+    //Serial.print("\t" + String(correction));
     Serial.println("P: " + String(kp * linePos) + " I: " + (ki * integral_sum) + " D: " + (kd * (linePos-lastPos)) + " Cor: " + correction);
     lastPos = linePos;
     if (correction > cur_speed) correction = cur_speed; //Clamp to usable values
