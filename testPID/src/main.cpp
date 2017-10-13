@@ -7,7 +7,12 @@
 const int readDelay = 10;
 const float sensorDiffToLinePos = 0.1;
 float kp = 30, ki = 0.01, kd = 50;
-int max_speed = 50;
+
+int fast_speed = 100;
+int slow_speed = 60;
+int cur_speed = 50;
+bool fast = false;
+
 int sensor_calibration_offset = -80;
 float sensor_calibration_scale = 1.4;
 const int turnSpeedLeft = 255, turnSpeedRight = 0;
@@ -105,7 +110,7 @@ void serial_tune_pid() {
     kp = in_values[0];
     ki = in_values[1];
     kd = in_values[2];
-    max_speed = in_values[3];
+    cur_speed = in_values[3];
     // sensor_calibration_offset = int(in_values[3]);
     // sensor_calibration_scale = in_values[4];
   }
@@ -116,10 +121,14 @@ void loop() {
 
   if (myReceiver.getResults()) { //First, read from the remote, since that can change lots of behavior
     myDecoder.decode();           //Decode it
-    myDecoder.dumpResults(true);  //Now print results -- or don't if we want speed
+    // myDecoder.dumpResults(true);  //Now print results -- or don't if we want speed
     myReceiver.enableIRIn();      //Restart receiver
-    turnCounter = turnLength;
-  } else if (turnCounter > 0) turnCounter--;
+    // turnCounter = turnLength;
+    fast = !fast;
+    cur_speed = fast ? fast_speed : slow_speed;
+    Serial.println(cur_speed);
+    Serial.println("GOTTA GO FAST");
+  } // else if (turnCounter > 0) turnCounter--;
 
   if (turnCounter) { //If we're in a human-triggered sharp turn...
     leftMotor->setSpeed(turnSpeedLeft);
@@ -152,12 +161,12 @@ void loop() {
     Serial.print("\t" + String(correction));
     // Serial.println("P: " + String(kp * linePos) + " I: " + (ki * integral) + " D: " + (kd * (linePos-lastPos)) + " Cor: " + correction);
     lastPos = linePos;
-    if (correction > max_speed) correction = max_speed; //Clamp to usable values
-    if (correction < -max_speed) correction = -max_speed;
+    if (correction > cur_speed) correction = cur_speed; //Clamp to usable values
+    if (correction < -cur_speed) correction = -cur_speed;
 
     //Set the motor speeds
-    rightMotor->setSpeed(correction < 0 ? max_speed : max_speed-correction);
-    leftMotor->setSpeed(correction > 0 ? max_speed : max_speed+correction);
+    rightMotor->setSpeed(correction < 0 ? cur_speed : cur_speed-correction);
+    leftMotor->setSpeed(correction > 0 ? cur_speed : cur_speed+correction);
 
     //And tell them to run
     rightMotor->run(FORWARD);
