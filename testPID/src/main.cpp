@@ -7,21 +7,27 @@
 const int readDelay = 10;
 const float sensorDiffToLinePos = 0.1;
 float kp = 30, ki = 0.01, kd = 50;
+//Working but slow: 30, 0.01, 50
 
-int fast_speed = 100;
-int slow_speed = 60;
-int cur_speed = 50;
+const int fast_speed = 60;
+const int slow_speed = 40;
+int cur_speed = slow_speed;
 bool fast = false;
 
-int sensor_calibration_offset = -80;
-float sensor_calibration_scale = 1.4;
+const int sensor_calibration_offset = -60;
+const float sensor_calibration_scale = 1.4;
 const int turnSpeedLeft = 255, turnSpeedRight = 0;
 
 const int turnLength = 20; //iterations after releasing button to keep turning
 int turnCounter = 0; //How long, in iterations, left in this turn
 
-const int numLeds = 3;
-const int ledPins[] = {5, 6, 7};
+int integral[50];
+const int integral_window = 20;
+int integral_i = 0;
+int integral_sum = 0;
+
+const int numLeds = 2;
+const int ledPins[] = {5, 7};
 const int sensorPin = A0;
 const int analogPower = A1;
 const int motorPins[] = {1, 2}; //Not on the Arduino, on the shield!
@@ -34,7 +40,7 @@ IRrecvPCI myReceiver(remotePin); //IR remote receiver
 IRdecode myDecoder; //IR remote decoder
 
 int sensorValues[3];
-float linePos, lastPos, correction, integral = 0; //Higher values indicate further to the right
+float linePos, lastPos, correction = 0; //Higher values indicate further to the right
 long unsigned int lastTime, loopTime = 0; //0 to indicate first loop (i.e. don't set anything)
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); // Create the motor shield object with the default I2C address
@@ -76,7 +82,7 @@ void serial_tune_pid() {
     float in_values[num_inputs];
 
     Serial.println("... Reading");
-    Serial.println("cur:" + String(kp) + " " + String(ki) + " " + String(kd) + " " + sensor_calibration_offset + " " + sensor_calibration_scale);
+    Serial.println("cur:" + String(kp) + " " + String(ki) + " " + String(kd) + " " + cur_speed);
 
     while(parameter_i < num_inputs) {
       if(Serial.available()){
@@ -148,18 +154,27 @@ void loop() {
     //   Serial.print("\t");
     // }
     // ADD auto calibration on button press
-    Serial.print(sensorValues[0] - sensorValues[2]);
+    /*Serial.print(sensorValues[0] - sensorValues[1]);
     Serial.print("\t");
-    Serial.print(((sensorValues[0] - sensorValues[2]) + sensor_calibration_offset) * sensor_calibration_scale);
+    Serial.print(((sensorValues[0] - sensorValues[1]) + sensor_calibration_offset) * sensor_calibration_scale);*/
 
     //Calculate line position based on sensor readings
-    linePos = ((sensorValues[0] - sensorValues[2]) + sensor_calibration_offset) * sensor_calibration_scale; //This should be tuned!
+    linePos = ((sensorValues[0] - sensorValues[1]) + sensor_calibration_offset) * sensor_calibration_scale; //This should be tuned!
 
     //Do the PID thing
-    integral += linePos;
-    correction = (kp * linePos) + (ki * integral) + (kd * (linePos-lastPos));
+    integral_i++;
+    if(integral_i > integral_window){ integral_i = 0; }
+    integral[integral_i] = linePos;
+
+    integral_sum = 0;
+    for(int i=0; i<integral_window; i++){
+      integral_sum += integral[i];
+    }
+
+
+    correction = (kp * linePos) + (ki * integral_sum) + (kd * (linePos-lastPos));
     Serial.print("\t" + String(correction));
-    // Serial.println("P: " + String(kp * linePos) + " I: " + (ki * integral) + " D: " + (kd * (linePos-lastPos)) + " Cor: " + correction);
+    Serial.println("P: " + String(kp * linePos) + " I: " + (ki * integral_sum) + " D: " + (kd * (linePos-lastPos)) + " Cor: " + correction);
     lastPos = linePos;
     if (correction > cur_speed) correction = cur_speed; //Clamp to usable values
     if (correction < -cur_speed) correction = -cur_speed;
