@@ -6,7 +6,7 @@
 
 const int readDelay = 10;
 const float sensorDiffToLinePos = 0.1;
-const float kp = 100, ki = 0.001, kd = 100;
+float kp = 100, ki = 0.001, kd = 100;
 const int turnSpeedLeft = 255, turnSpeedRight = 0;
 
 const int turnLength = 20; //iterations after releasing button to keep turning
@@ -34,7 +34,6 @@ Adafruit_DCMotor *rightMotor = AFMS.getMotor(motorPins[1]);
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Begin");
 
   for (int i=0; i<3; i++) pinMode(ledPins[i], OUTPUT);
   pinMode(sensorPin, INPUT);
@@ -48,34 +47,59 @@ void setup() {
 
   //while (digitalRead(buttonPin) == HIGH) delay(10); //Wait for button press
 
+  Serial.println("Begin");
 }
 
 void serial_tune_pid() {
-  int c_index = 0;
-  int parameter_i = 0;
-  char in_string[7];
-  int pid_values[3];
+  if(Serial.available()){
+    Serial.read();
+    
+    int c_index = 0;
+    int parameter_i = 0;
+    char in_string[7];
+    float pid_values[3];
 
-  while(Serial.available()) {
-    char c = Serial.read();
-    if(c==" "){
-      pid_values[parameter_i] = atoi(in_string);
-      in_string = "";
-      parameter_i++;
+    Serial.println("...");
+
+    while(parameter_i < 3) {
+      if(Serial.available()){
+        char c = Serial.read();
+        Serial.print(c);
+
+        if(c == ' '){
+          in_string[c_index++] = '\0';
+          Serial.println(in_string);
+          pid_values[parameter_i] = atof(in_string);
+
+          // Serial.print(in_string);
+          c_index = 0;
+          in_string[0] = '\0';
+          parameter_i++;
+        }
+        else {
+          in_string[c_index++] = c;
+        }
+      }
+
     }
-    in_string[c_index++] = c;
-  }
 
-  for(int i = 0; i<3; i++){
-    Serial.print(pid_values[i]);
-  }
+    Serial.print("Setting PID to ");
+    for(int i = 0; i<3; i++){
+      Serial.print(pid_values[i]);
+      Serial.print(' ');
+    }
+    Serial.println();
 
-  Serial.println();
+    kp = pid_values[0];
+    ki = pid_values[1];
+    kd = pid_values[2];
+
+  }
 }
 
 void loop() {
   serial_tune_pid();
-  
+
   if (myReceiver.getResults()) { //First, read from the remote, since that can change lots of behavior
     myDecoder.decode();           //Decode it
     myDecoder.dumpResults(true);  //Now print results -- or don't if we want speed
